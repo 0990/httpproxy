@@ -1,10 +1,10 @@
 package httpproxy
 
 type Config struct {
-	BindAddr      string   `json:"bind_addr"`
-	LocalDstHosts []string `json:"local_dst_hosts"` //走本地的host
+	BindAddr string   `json:"bind_addr"`
+	Hosts    []string `json:"hosts"` //哪些host走此代理，*代表任意host
 
-	RemoteAddr string `json:"remote_addr"` //当匹配到远程模式时，会将连接转到这个地址http代理
+	NextProxyAddr string `json:"next_proxy_addr"` //除上面host外的走的http代理
 
 	Verbose bool `json:"verbose"`
 }
