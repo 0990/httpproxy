@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
 )
 
 type Server interface {
 	ListenAndServe() error
+	AddCallBack(reqCB, failCB, relayCB func(r *http.Request))
 }
 
 type server struct {
@@ -16,6 +18,8 @@ type server struct {
 	matcherMgr *matcherManger
 	logger     Logger
 	sess       int64
+
+	reqCallback, failCallback, relayCallback func(r *http.Request)
 }
 
 func NewServer(cfg Config) Server {
@@ -50,4 +54,10 @@ func (s *server) ListenAndServe() error {
 			}
 		}()
 	}
+}
+
+func (p *server) AddCallBack(reqCB, failCB, relayCB func(r *http.Request)) {
+	p.reqCallback = reqCB
+	p.failCallback = failCB
+	p.relayCallback = relayCB
 }

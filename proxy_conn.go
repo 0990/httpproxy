@@ -29,6 +29,24 @@ func newProxyConn(sessId int64, conn net.Conn, proxy *server) *ProxyConn {
 	}
 }
 
+func (p *ProxyConn) reqCallBack() {
+	if p.proxy.reqCallback != nil {
+		p.proxy.reqCallback(p.req)
+	}
+}
+
+func (p *ProxyConn) failCallBack() {
+	if p.proxy.failCallback != nil {
+		p.proxy.failCallback(p.req)
+	}
+}
+
+func (p *ProxyConn) relayCallBack() {
+	if p.proxy.relayCallback != nil {
+		p.proxy.relayCallback(p.req)
+	}
+}
+
 func (p *ProxyConn) Handle() error {
 	hReader := NewHistoryReader(p.Conn)
 	bReader := bufio.NewReader(hReader)
@@ -38,6 +56,8 @@ func (p *ProxyConn) Handle() error {
 	}
 
 	p.req = r
+
+	p.reqCallBack()
 
 	reqBody := hReader.History()
 
@@ -68,10 +88,13 @@ func (p *ProxyConn) Handle() error {
 }
 
 func (p *ProxyConn) relayToNextHttpProxy(reqData []byte) {
+	p.relayCallBack()
+
 	clientConn := p.Conn
 
 	proxyConn, err := net.DialTimeout("tcp", p.proxy.cfg.NextProxyAddr, 3*time.Second)
 	if err != nil {
+		p.failCallBack()
 		httpError(clientConn, p, fmt.Errorf("dial %s fail,error: %w", p.proxy.cfg.NextProxyAddr, err))
 		return
 	}
@@ -85,6 +108,7 @@ func (p *ProxyConn) handleConnect(targetAddr string) {
 
 	targetConn, err := net.DialTimeout("tcp", targetAddr, 3*time.Second)
 	if err != nil {
+		p.failCallBack()
 		httpError(clientConn, p, fmt.Errorf("dial %s fail,error: %w", targetAddr, err))
 		return
 	}
@@ -114,12 +138,14 @@ func (p *ProxyConn) handleNoConnect(targetAddr string, reqData []byte) {
 	req := p.req
 
 	if !req.URL.IsAbs() {
+		p.failCallBack()
 		httpError(clientConn, p, errors.New("url not abs"), "HTTP/1.1 500 This is a proxy server. Does not respond to non-proxy requests.\r\n\r\n")
 		return
 	}
 
 	targetConn, err := net.DialTimeout("tcp", targetAddr, 3*time.Second)
 	if err != nil {
+		p.failCallBack()
 		httpError(clientConn, p, fmt.Errorf("dial %s fail,error: %w", targetAddr, err))
 		return
 	}
