@@ -170,16 +170,33 @@ func (p *ProxyConn) Warnf(msg string, argv ...interface{}) {
 }
 
 func CopyEachAndClose(a, b net.Conn, ctx *ProxyConn) {
-	var wg sync.WaitGroup
-	wg.Add(2)
-	go copyOrWarn(a, b, ctx, &wg)
-	go copyOrWarn(b, a, ctx, &wg)
-	wg.Wait()
-	a.Close()
-	b.Close()
+
+	aTcp, aOK := a.(*net.TCPConn)
+	bTcp, bOK := b.(*net.TCPConn)
+	if aOK && bOK {
+		go copyAndClose(aTcp, bTcp, ctx)
+		go copyAndClose(bTcp, aTcp, ctx)
+	} else {
+		var wg sync.WaitGroup
+		wg.Add(2)
+		go copyOrWarn(a, b, ctx, &wg)
+		go copyOrWarn(b, a, ctx, &wg)
+		wg.Wait()
+		a.Close()
+		b.Close()
+	}
 }
 
-func copyOrWarn(dst io.Writer, src io.Reader, ctx *ProxyConn, wg *sync.WaitGroup) {
+func copyAndClose(dst, src *net.TCPConn, ctx *ProxyConn) {
+	if _, err := io.Copy(dst, src); err != nil {
+		ctx.Warnf("Error copying to client: %s", err)
+	}
+
+	dst.CloseWrite()
+	src.CloseRead()
+}
+
+func copyOrWarn(dst io.WriteCloser, src io.ReadCloser, ctx *ProxyConn, wg *sync.WaitGroup) {
 	if _, err := io.Copy(dst, src); err != nil {
 		ctx.Warnf("Error copying to client: %s", err)
 	}

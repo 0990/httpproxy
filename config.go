@@ -9,4 +9,5 @@ type Config struct {
 	Verbose bool `json:"verbose"`
 
 	StatsAddr string `json:"stats_addr"` //统计http地址
+	PProfAddr string `json:"pprof_addr""`
 }

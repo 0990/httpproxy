@@ -8,10 +8,11 @@ import (
 
 func Test_CreateConfig(t *testing.T) {
 	cfg := &Config{
-		BindAddr:      "0.0.0.0:8080",
-		Hosts:         []string{"baidu.com"},
+		BindAddr:      "0.0.0.0:3128",
+		Hosts:         []string{"*"},
 		NextProxyAddr: "",
 		Verbose:       false,
+		PProfAddr:     "0.0.0.0:12580",
 	}
 
 	c, _ := json.MarshalIndent(cfg, "", "   ")

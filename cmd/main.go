@@ -7,6 +7,7 @@ import (
 	"github.com/0990/httpproxy"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 )
 
@@ -25,6 +26,15 @@ func main() {
 	}
 
 	log.Println("config:", cfg)
+
+	if cfg.PProfAddr != "" {
+		go func() {
+			err := http.ListenAndServe(cfg.PProfAddr, nil)
+			if err != nil {
+				log.Panic(err)
+			}
+		}()
+	}
 
 	stats := httpproxy.NewStats()
 	stats.Run()

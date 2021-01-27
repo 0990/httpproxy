@@ -1,8 +1,10 @@
 {
-   "bind_addr": "0.0.0.0:8080",
+   "bind_addr": "0.0.0.0:3128",
    "hosts": [
-      "baidu.com"
+      "*"
    ],
    "next_proxy_addr": "",
-   "verbose": false
+   "verbose": true,
+   "stats_addr": "",
+   "pprof_addr": "0.0.0.0:12580"
 }
